@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    {%  load staticfiles %}
+
+    <!--<link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}/favicon.ico"/>-->
+    <link rel="icon" type="image/png" href="{% static 'favicon/favicon-32x32.png' %}" sizes="32x32">
+
+    <style>
+        * {
+            font-family: "Trebuchet MS", Helvetica, sans-serif;
+        }
+        h1 {display:inline}
+        body { margin: 20px}
+        article > button {
+            color: #900;
+            font-weight: bold;
+            display: block;
+            padding: 8px;
+            margin: 20px 0;
+            width:100%
+        }
+        article > select {
+            color: #900;
+            font-weight: bold;
+            display: block;
+            height: 40px;
+            line-height: 40px;
+            margin: 20px 0;
+            width:100%
+        }
+        .temperature-control {
+            width:70%;
+            margin: 20px auto;
+        }
+        .temperature-control > button {
+            width:30%;
+            color: #900;
+            font-size: 200%;
+            margin: 20px 0;
+        }
+        .temperature-control > p {
+            font-size: 200%;
+            color: #900;
+            text-align: center;
+            margin: 0;
+        }
+        .remote{display: none;}
+    </style>
+
+    <meta charset="UTF-8">
+    <title>heatpump controller</title>
+</head>
+<body>
+
+<header>
+    <h1>Heatpump controller</h1>
+    <span><span id="temperature-value">14</span>&deg;C - <span id="humidity-value">65</span>%</span>
+    <hr/>
+</header>
+<article class="remote">
+    <button id="power" name="power" value="on">ON</button>
+
+    <div class="temperature-control">
+        <p><span id="set-temperature">23</span>&deg;C</p>
+        <button id="down" name="temperature" value="down" style="float:left">-</button>
+        <button id="up" name="temperature" value="up" style="float:right">+</button>
+    </div>
+    <select id="mode" name="mode">
+        <option value="0">heat</option>
+        <option value="1">cool</option>
+        <option value="2">auto</option>
+        <option value="3">dehumidify</option>
+    </select>
+    <select id="fan" name="fan">
+        <option value="0">quiet</option>
+        <option value="1">low</option>
+        <option value="2">medium</option>
+        <option value="3">high</option>
+        <option value="4">auto</option>
+    </select>
+</article>
+<article class="loading">
+    <p>loading...</p>
+</article>
+
+<script src="{% static 'remote/jquery.min.js' %}" ></script>
+
+<script>
+    function getCookie(name) {
+		var nameEQ = name + "=";
+		var ca = document.cookie.split(';');
+		for(var i=0;i < ca.length;i++) {
+			var c = ca[i];
+			while (c.charAt(0)==' ') c = c.substring(1,c.length);
+			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+		}
+		return null;
+	}
+    function crsfHelper(xhr){xhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken"));}
+
+    var state = null;
+
+    function state_compare(one, two){
+        if(one == null || two == null) return false;
+        return one.power == two.power &&
+                one.temperature == two.temperature &&
+                one.fan == two.fan &&
+                one.mode == one.mode;
+    }
+
+    function state_update(newState) {
+        state = newState;
+        console.log(state);
+        if(state.power) {
+            $('#power').val('off').html('OFF');
+            $('.remote div').show();
+            $('.remote select').show();
+        } else {
+            $('#power').val('on').html('ON');
+            $('.remote div').hide();
+            $('.remote select').hide();
+        }
+        $('#set-temperature').html(state.temperature);
+        $('#fan').val(state.fan);
+        $('#mode').val(state.mode);
+    }
+
+    function state_send() {
+        $('article').toggle();
+        $.ajax({type: 'POST',
+                url: "{% url 'remote:state' %}",
+                data: JSON.stringify(state),
+                beforeSend: crsfHelper,
+                success: function(result) {
+                    state_update(result);
+                    $('article').toggle();
+                }
+		});
+    }
+
+    $(document).ready(function() {
+        $.ajax({type: 'GET',
+                url: "{% url 'remote:state' %}",
+                data: '',
+                beforeSend: crsfHelper,
+                success: function(result) {
+                    if(!state_compare(state, result)) {
+                        state_update(result);
+                    }
+                    $('article').toggle();
+                }
+		});
+
+        $('#up')  .click (function(){state.temperature++; state_send();});
+        $('#down').click (function(){state.temperature--; state_send();});
+        $('#mode').change(function(){state.mode = $(this).val(); state_send();});
+        $('#fan') .change(function() {state.fan = $(this).val(); state_send();});
+        $('#power').click(function() {
+            state.power = !state.power;
+            state_send();
+        });
+    });
+</script>
+</body>
+</html>
