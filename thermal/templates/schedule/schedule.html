@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <article class="schedule">
+        <section class="new">
+            <p><span class="on">+</span> Add</p>
+        </section>
+        <section class="form">
+            <form method="post" action="{% url 'schedule:add' %}">
+                <input type="checkbox" name="on" id="on" checked/>
+                <label for="on">On</label>
+                <input id="temp" name="temp" type="range" value="16" step="1" min="16" max="26"/>
+                <select id="mode" name="mode">
+                    <option value="0">heat</option>
+                    <option value="1">cool</option>
+                    <option value="2">auto</option>
+                    <option value="3">dehumidify</option>
+                </select>
+                <select id="fan" name="fan">
+                    <option value="0">quiet</option>
+                    <option value="1">low</option>
+                    <option value="2">medium</option>
+                    <option value="3">high</option>
+                    <option value="4">auto</option>
+                </select>
+                <input type="submit"/>
+            </form>
+        </section>
+        <section class="scheduled">
+            <p class="state">16&deg;C heat quiet</p>
+            <p class="when">0500, (12 hours away)</p>
+            <p class="days">
+                <span class="on">M</span>
+                <span class="on">T</span>
+                <span>W</span>
+                <span>T</span>
+                <span class="on">F</span>
+                <span>S</span>
+                <span class="on">S</span>
+            </p>
+        </section>
+    </article>
+{% endblock %}
+
+{% block script %}
+<script>
+    $(document).ready(function() {
+        console.log('ready');
+        $('#on').click(function() {
+
+            $('#temp, #fan, #mode').prop('hidden', !this.checked);
+            $('form label').html(this.checked ? 'On' : 'Off');
+        });
+    });
+</script>
+{% endblock %}

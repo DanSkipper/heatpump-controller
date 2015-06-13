@@ -8,13 +8,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
 from django.shortcuts import render
 
-import pigpio
-from ir.ir_tx import tx
-from ir.control import *
+#import pigpio
+#from ir.ir_tx import tx
+#from ir.control import *
 
 from remote.models import HeatPumpState
 
 def run(temperature, fan, mode, power):
+   return 5
    if mode == '0':
       mode = MODE_HEAT
    elif mode == '1':
